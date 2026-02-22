@@ -1,0 +1,11 @@
+sdk-version: 3.4.11
+build-options: 
+- --target=2.2
+name: medical-records
+source: MedicalRecord.daml
+init-script: MedicalRecord:setup
+version: 3.4.11
+dependencies: 
+- daml-prim
+- daml-stdlib
+- daml-script

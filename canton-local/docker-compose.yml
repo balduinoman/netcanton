@@ -1,0 +1,80 @@
+version: "3.8"
+
+services:
+
+  postgres-mediator:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: canton
+    ports:
+      - "5431:5432"
+      
+  postgres-sequencer:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: canton
+    ports:
+      - "5432:5432"
+
+  postgres-participant1:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: canton
+    ports:
+      - "5433:5432"
+
+  postgres-participant2:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: canton
+    ports:
+      - "5434:5432"
+
+  mediator:
+    image: local-canton:3.4.11
+    depends_on:
+      - postgres-mediator
+    volumes:
+      - ./config/mediator.conf:/canton.conf
+    command: ["daemon", "-c", "/canton.conf"]
+    ports:
+      - "6864:6864"
+     
+  sequencer:
+    image: local-canton:3.4.11
+    depends_on:
+      - postgres-sequencer
+    volumes:
+      - ./config/sequencer.conf:/canton.conf
+    command: ["daemon", "-c", "/canton.conf"]
+    ports:
+      - "6865:6865"
+
+  participant1:
+    image: local-canton:3.4.11
+    depends_on:
+      - postgres-participant1
+    volumes:
+      - ./config/participant1.conf:/canton.conf
+    command: daemon --config /canton.conf
+    ports:
+      - "6866:5001"
+      - "5061:5061"
+
+  participant2:
+    image: local-canton:3.4.11
+    depends_on:
+      - postgres-participant2
+    volumes:
+      - ./config/participant2.conf:/canton.conf
+    command: daemon --config /canton.conf
+    ports:
+      - "6867:6865"
