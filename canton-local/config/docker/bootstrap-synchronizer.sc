@@ -11,6 +11,8 @@ def main() = {
     staticSynchronizerParameters =
       StaticSynchronizerParameters.defaultsWithoutKMS(ProtocolVersion.forSynchronizer)
   )
+  
+  println(nodes)
 
 }
 

@@ -45,6 +45,8 @@ services:
     volumes:
       - ./sequencer.conf:/canton.conf
     command: daemon --config /canton.conf
+    ports:
+      - "5008:5008"
       
   mediator:
     image: local-canton:3.4.11
@@ -54,6 +56,8 @@ services:
     volumes:
       - ./mediator.conf:/canton.conf
     command: daemon --config /canton.conf
+    ports:
+      - "5007:5007"
   
   synchronizer:
     image: local-canton:3.4.11
