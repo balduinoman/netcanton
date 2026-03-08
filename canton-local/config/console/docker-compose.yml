@@ -1,0 +1,39 @@
+version: "3.8"
+
+services:
+
+  postgres-mediator:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: mediator
+    ports:
+      - "8431:5432"
+      
+  postgres-sequencer:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: sequencer
+    ports:
+      - "8432:5432"
+      
+  postgres-sequencer_driver:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: sequencer_driver
+    ports:
+      - "8433:5432"
+      
+  postgres-participant1:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: participant
+    ports:
+      - "8434:5432"

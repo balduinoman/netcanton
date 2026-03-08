@@ -1,0 +1,80 @@
+version: "3.8"
+
+services:
+
+  postgres-mediator:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: mediator
+    ports:
+      - "8431:5432"
+      
+  postgres-sequencer:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: sequencer
+    ports:
+      - "8432:5432"
+      
+  postgres-sequencer_driver:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: sequencer_driver
+    ports:
+      - "8433:5432"
+      
+  postgres-participant1:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: canton
+      POSTGRES_PASSWORD: canton
+      POSTGRES_DB: participant
+    ports:
+      - "8434:5432"
+   
+  sequencer:
+    image: local-canton:3.4.11
+    depends_on:
+      - postgres-sequencer
+    volumes:
+      - ./sequencer.conf:/canton.conf
+    command: daemon --config /canton.conf
+      
+  mediator:
+    image: local-canton:3.4.11
+    depends_on:
+      - postgres-mediator
+      - sequencer
+    volumes:
+      - ./mediator.conf:/canton.conf
+    command: daemon --config /canton.conf
+  
+  synchronizer:
+    image: local-canton:3.4.11
+    depends_on:
+      - mediator
+      - sequencer
+    volumes:
+      - ./synchronizer.conf:/canton.conf
+      - ./bootstrap-synchronizer.sc:/bootstrap.sc
+    command: daemon --config /canton.conf --bootstrap /bootstrap.sc
+
+  participant1:
+    image: local-canton:3.4.11
+    depends_on:
+      - postgres-participant1
+      - synchronizer
+    volumes:
+      - ./participant1.conf:/canton.conf
+      - ./bootstrap-participant1.sc:/bootstrap.sc
+    command: daemon --config /canton.conf --bootstrap /bootstrap.sc
+    ports:
+      - "7001:7001"
+      - "7002:7002"
+      - "5063:5063"

@@ -9,75 +9,63 @@ import io.grpc.ManagedChannelBuilder;
 
 import java.util.UUID;
 
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) {
+        // Connect to Canton Ledger API
+        ManagedChannel channel = ManagedChannelBuilder
+                .forAddress("localhost", 7001) // Replace with your Canton Ledger address and port
+                .usePlaintext() // Use TLS in production
+                .build();
 
-        ManagedChannel channel =
-                ManagedChannelBuilder
-                        .forAddress("localhost", 6865)
-                        .usePlaintext() // use TLS in production
-                        .build();
+        CommandServiceGrpc.CommandServiceBlockingStub stub = CommandServiceGrpc.newBlockingStub(channel);
 
-        CommandServiceGrpc.CommandServiceBlockingStub stub =
-                CommandServiceGrpc.newBlockingStub(channel);
-
+        // Generate a unique command ID
         String commandId = UUID.randomUUID().toString();
 
-        // Build template arguments
-        ValueOuterClass.Record record =
-                ValueOuterClass.Record.newBuilder()
-                        .addFields(
-                                ValueOuterClass.RecordField.newBuilder()
-                                        .setLabel("sender")
-                                        .setValue(ValueOuterClass.Value.newBuilder()
-                                                .setParty("Alice")
-                                                .build())
-                                        .build()
-                        )
-                        .addFields(
-                                ValueOuterClass.RecordField.newBuilder()
-                                        .setLabel("receiver")
-                                        .setValue(ValueOuterClass.Value.newBuilder()
-                                                .setParty("Bob")
-                                                .build())
-                                        .build()
-                        )
-                        .build();
+        // Create a Payment instance
+        Payment payment = new Payment(
+                "Alice::12209d9019d374bad76f7f603042d57fb587c7c0d456451e4a6cf1ffcb0cbd3c1f55",
+                "Bob::12209d9019d374bad76f7f603042d57fb587c7c0d456451e4a6cf1ffcb0cbd3c1f55",
+                100L);
 
-        CommandsOuterClass.CreateCommand createCommand =
-                CommandsOuterClass.CreateCommand.newBuilder()
-                        .setTemplateId(
-                                ValueOuterClass.Identifier.newBuilder()
-                                        .setPackageId("your-package-id")
-                                        .setModuleName("YourModule")
-                                        .setEntityName("Payment")
-                                        .build()
-                        )
-                        .setCreateArguments(record)
-                        .build();
+        // Convert Payment to Daml Record
+        ValueOuterClass.Value record = payment.toValue().toProto();
 
-        CommandsOuterClass.Commands commands =
-                CommandsOuterClass.Commands.newBuilder()
-                        .setCommandId(commandId)
-                        .addActAs("Alice")   // v2 replacement for setParty
-                        .addCommands(
-                                CommandsOuterClass.Command.newBuilder()
-                                        .setCreate(createCommand)
-                                        .build()
-                        )
-                        .build();
+        // Build the CreateCommand
+        CommandsOuterClass.CreateCommand createCommand = CommandsOuterClass.CreateCommand.newBuilder()
+                .setTemplateId(
+                        ValueOuterClass.Identifier.newBuilder()
+                                .setPackageId("2f7c949ffd0d767b3fbd95accd83593781fb57853bd76b15b38ded74241aba3c") // Replace with your Daml package ID
+                                .setModuleName("Main") // Replace with your module name
+                                .setEntityName("Payment") // Replace with your template name
+                                .build()
+                )
+                .setCreateArguments(record.getRecord())
+                .build();
 
-        CommandServiceOuterClass.SubmitAndWaitRequest request =
-                CommandServiceOuterClass.SubmitAndWaitRequest.newBuilder()
-                        .setCommands(commands)
-                        .build();
+        // Build the Commands
+        CommandsOuterClass.Commands commands = CommandsOuterClass.Commands.newBuilder()
+                .setCommandId(commandId)
+                .addActAs("Alice::12209d9019d374bad76f7f603042d57fb587c7c0d456451e4a6cf1ffcb0cbd3c1f55")
+                .addActAs("participant1::12209d9019d374bad76f7f603042d57fb587c7c0d456451e4a6cf1ffcb0cbd3c1f55") // Replace with the party submitting the command
+                .setUserId("participant1::12209d9019d374bad76f7f603042d57fb587c7c0d456451e4a6cf1ffcb0cbd3c1f55")
+                .addCommands(
+                        CommandsOuterClass.Command.newBuilder()
+                                .setCreate(createCommand)
+                                .build()
+                )
+                .build();
+
+        // Submit the command
+        CommandServiceOuterClass.SubmitAndWaitRequest request = CommandServiceOuterClass.SubmitAndWaitRequest.newBuilder()
+                .setCommands(commands)
+                .build();
 
         stub.submitAndWait(request);
 
         System.out.println("Transaction committed.");
 
+        // Shutdown the channel
         channel.shutdown();
     }
 }
